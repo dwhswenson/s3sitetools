@@ -1,0 +1,5 @@
+Description: >
+  Create a certificate for a domain registered on AWS Route53, for use with
+  CloudFront. Note that this must be created in the us-east-1 region.
+
+

@@ -1,0 +1,7 @@
+Description: >
+  Create the a bucket and bucket policy for S3 static site hosting.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Name for the bucket

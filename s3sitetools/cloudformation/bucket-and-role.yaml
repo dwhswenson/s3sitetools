@@ -1,0 +1,92 @@
+Description: >
+  Bucket and role
+
+Parameters:
+  BucketName:
+    Type: String
+  OIDCProviderArn:
+    Type: String
+  SubjectFilter:
+    Type: String
+    Description: Filter to only allow certain OIDC subjects
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Ref BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        ErrorDocument: "404.html"
+        IndexDocument: "index.html"
+
+  WorkflowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: >
+        Role to allow a GitHub workflow to write/delete objects in the
+        production bucket
+      Policies:
+        - PolicyName: S3-Bucket-Access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ["s3:ListBucket"]
+                Resource: !GetAtt S3Bucket.Arn
+              - Effect: Allow
+                Action: "s3:*"
+                Resource: !Sub "${S3Bucket.Arn}/*"
+
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref OIDCProviderArn
+            Action:
+              - "sts:AssumeRoleWithWebIdentity"
+            Condition:
+              StringEquals:
+                "token.actions.githubusercontent.com:aud": sts.amazonaws.com
+              StringLike:
+                "token.actions.githubusercontent.com:sub": !Ref SubjectFilter
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicWebAccess
+            Effect: "Allow"
+            Action: "s3:GetObject"
+            Principal: "*"
+            Resource: !Sub "${S3Bucket.Arn}/*"
+          - Sid: RoleListBucketAccess
+            Effect: "Allow"
+            Action: "s3:ListBucket"
+            Principal:
+              AWS: !GetAtt WorkflowRole.Arn
+            Resource: !Sub "${S3Bucket.Arn}"
+          - Sid: RoleReadWriteAccess
+            Effect: "Allow"
+            Action: 
+              - "s3:PutObject"
+              - "s3:GetObject"
+              - "s3:GetObjectTagging"
+              - "s3:DeleteObject"
+              - "s3:DeleteObjectVersion"
+              - "s3:GetObjectVersion"
+              - "s3:GetObjectVersionTagging"
+              - "s3:GetObjectACL"
+              - "s3:PutObjectACL"
+            Principal: 
+              AWS: !GetAtt WorkflowRole.Arn
+            Resource: !Sub "${S3Bucket.Arn}/*"

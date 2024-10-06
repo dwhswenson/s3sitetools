@@ -1,0 +1,16 @@
+Description: >
+  Setup for a CloudFront distribution, optionally with www-redirects
+
+Parameters:
+  S3Bucket:
+    Type: String
+  CertificateArn:
+    Type: String
+  DomainName:
+    Type: String
+  HostedZoneId:
+    Type: String
+  IncludeWWWRedirect:
+    Type: String
+    AllowedValues: ["true", "false"]
+

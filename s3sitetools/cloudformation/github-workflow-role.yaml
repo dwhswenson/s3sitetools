@@ -1,0 +1,12 @@
+Description: >
+  Create an IAM role that allows a specific GitHub workflow to write to an
+  S3 bucket.
+
+Parameters:
+  BucketArn:
+    Type: String
+  OIDCProviderArn:
+    Type: String
+  WorkflowID:
+    Type: String
+    Description: Full workflow ID for token subject filtering
